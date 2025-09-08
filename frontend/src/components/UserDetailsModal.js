@@ -112,7 +112,7 @@ const UserDetailsModal = ({ isOpen, onClose, onSave }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-darker">
               Your Astrological Details
             </h2>
@@ -125,14 +125,14 @@ const UserDetailsModal = ({ isOpen, onClose, onSave }) => {
             </button>
           </div>
 
-          <p className="text-sm text-gray-text mb-6">
-            To provide accurate astrological readings, we need your birth details. This information is stored locally on your device.
+          <p className="text-sm text-gray-text mb-4">
+            To provide accurate astrological readings, we need your birth details.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* First Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-darker mb-2">
+              <label className="block text-sm font-medium text-gray-darker ">
                 First Name
               </label>
               <input
@@ -152,7 +152,7 @@ const UserDetailsModal = ({ isOpen, onClose, onSave }) => {
 
             {/* Last Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-darker mb-2">
+              <label className="block text-sm font-medium text-gray-darker">
                 Last Name
               </label>
               <input
@@ -172,7 +172,7 @@ const UserDetailsModal = ({ isOpen, onClose, onSave }) => {
 
             {/* Date of Birth */}
             <div>
-              <label className="block text-sm font-medium text-gray-darker mb-2">
+              <label className="block text-sm font-medium text-gray-darker">
                 Date of Birth
               </label>
               <input
@@ -191,7 +191,7 @@ const UserDetailsModal = ({ isOpen, onClose, onSave }) => {
 
             {/* Place of Birth */}
             <div>
-              <label className="block text-sm font-medium text-gray-darker mb-2">
+              <label className="block text-sm font-medium text-gray-darker">
                 Place of Birth
               </label>
               <input
@@ -211,7 +211,7 @@ const UserDetailsModal = ({ isOpen, onClose, onSave }) => {
 
             {/* Time of Birth */}
             <div>
-              <label className="block text-sm font-medium text-gray-darker mb-2">
+              <label className="block text-sm font-medium text-gray-darker ">
                 Time of Birth
               </label>
               <input

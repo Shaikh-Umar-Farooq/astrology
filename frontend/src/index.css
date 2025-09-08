@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile viewport height fix */
+@supports (height: 100dvh) {
+  .mobile-height {
+    height: 100dvh;
+  }
+}
+
+@supports not (height: 100dvh) {
+  .mobile-height {
+    height: 100vh;
+  }
+}
+
+/* Prevent scrolling on mobile */
+html, body {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* Custom scrollbar for chat messages */
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;

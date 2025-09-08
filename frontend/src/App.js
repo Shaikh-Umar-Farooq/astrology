@@ -125,15 +125,15 @@ function App() {
   }, []);
 
   return (
-    <div className="font-sans bg-gray-100 text-gray-darker h-screen overflow-hidden">
-      <div className="grid lg:grid-cols-desktop md:grid-cols-tablet grid-cols-1 h-screen max-w-1400 mx-auto bg-white">
+    <div className="font-sans bg-gray-100 text-gray-darker mobile-height overflow-hidden">
+      <div className="grid lg:grid-cols-desktop md:grid-cols-tablet grid-cols-1 max-w-1400 mx-auto bg-white mobile-height">
         {/* Left Sidebar - Hidden on mobile */}
-        <div className="hidden md:block h-screen overflow-y-auto">
+        <div className="hidden md:block overflow-y-auto mobile-height">
           <AdSection side="left" />
         </div>
 
         {/* Main Chat Section - Fixed Layout */}
-        <div className="flex flex-col h-screen relative">
+        <div className="flex flex-col relative mobile-height">
           {/* Fixed Header */}
           <div className="sticky top-0 z-10 bg-white">
             <Header onUserIconClick={handleUserIconClick} />
@@ -159,7 +159,7 @@ function App() {
         </div>
 
         {/* Right Sidebar - Hidden on mobile */}
-        <div className="hidden md:block h-screen overflow-y-auto">
+        <div className="hidden md:block overflow-y-auto mobile-height">
           <AdSection side="right" />
         </div>
       </div>
