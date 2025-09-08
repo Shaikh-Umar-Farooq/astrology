@@ -3,10 +3,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { handleUserQuestion, getUserDailyStatus, generateUserKey } = require('./services/supabaseService');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -27,7 +28,18 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
-app.use('/api/', limiter);
+
+// More restrictive rate limiting for user status endpoint
+const statusLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // limit each IP to 10 requests per minute for status checks
+  message: 'Too many status requests from this IP, please slow down.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+app.use('/api/chat', limiter);
+app.use('/api/user-status', statusLimiter);
 
 // Create dynamic astrology prompt based on user data
 const createAstrologyPrompt = (userData, userMessage) => {
@@ -35,7 +47,7 @@ const createAstrologyPrompt = (userData, userMessage) => {
   
   return `You are a highly knowledgeable Vedic Pandit and Astrologer with deep expertise in Jyotish (Vedic Astrology).
 
-Apply traditional Jyotish principles — including dashas, nakshatras, planetary strengths/weaknesses, yogas, and current transits — to analyze the birth chart and provide guidance for: "${userMessage}"
+Apply traditional Jyotish principles to analyze the birth chart and answer: "${userMessage}"
 
 Birth Details:
 • Name: ${firstName} ${lastName}
@@ -50,29 +62,35 @@ LANGUAGE INSTRUCTION:
 - If user asks in English, respond in English
 - Use the SAME language style and tone as the user's question
 
-IMPORTANT FORMATTING RULES:
-1. Address the person directly as "you/aap" and "your/aapka" (not third person like "${firstName}'s")
-2. Break response into 4-5 SHORT paragraphs (2-3 sentences each)
-3. Use these EXACT formatting markers:
-   - **POSITIVE** for favorable predictions
-   - **NEGATIVE** for challenging predictions
-   - **NEUTRAL** for general guidance
-   - **REMEDY** for solutions and mantras
+CRITICAL FORMATTING RULES:
+1. Keep response SHORT - maximum 3-4 paragraphs total (under 150 words)
+2. Start with "Namaste ${firstName} ji!" and brief lagna analysis
+3. Use EXACT formatting markers:
+   - <green>positive predictions</green>
+   - <red>negative predictions</red>
+4. Focus on SPECIFIC TIMING (years, periods)
+5. NO disclaimers, NO "this is just a glimpse", NO "Jai Shree Krishna" endings
+6. Address directly as "you/aap" never third person
 
-Format examples:
-**POSITIVE** Aapka Jupiter placement bahut achha hai, growth ke liye excellent prospects hain.
+EXACT FORMAT TO FOLLOW:
+Namaste ${firstName} ji! Brief lagna analysis in 1 line.
 
-**NEGATIVE** Saturn ka current transit thoda delay la sakta hai coming months mein.
+<green>Positive prediction with specific timing.</green> Brief planetary logic. <green>Another positive with timing.</green>
 
-**REMEDY** "Om Gam Ganapataye Namaha" 108 times daily japo obstacles remove karne ke liye.
+<red>Negative aspect with timing.</red> Brief explanation. <red>Another challenge if relevant.</red>
 
-Include:
-- Current planetary influences on the queried area
-- Specific timing predictions when relevant
-- Traditional remedies (mantras, gemstones, rituals)
-- Use natural mix of Hindi/English words when responding in Hinglish
+Overall conclusion in 1 line with final <green>positive note.</green>
 
-Maintain authentic Vedic terminology while keeping language accessible and personal in the user's preferred language style.`;
+<green>Summary:</green>
+• Brief positive point with timing
+• Brief challenge/negative point with timing
+• Overall advice/conclusion
+
+INCLUDE:
+- Specific years/periods for predictions
+- Brief planetary explanations (1 line each)
+- Focus on timing and outcomes only
+- Keep total response under 150 words`;
 };
 
 // Chat endpoint
@@ -99,6 +117,30 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    // Handle user question tracking in Supabase with daily limit check
+    let userLimitInfo = null;
+    try {
+      console.log('Processing question for user:', userData.firstName);
+      userLimitInfo = await handleUserQuestion(userData);
+      console.log('User limit info after processing:', userLimitInfo);
+      
+      // Check if user has exceeded daily limit
+      if (userLimitInfo && !userLimitInfo.can_ask_question) {
+        console.log('User has exceeded daily limit:', userLimitInfo.daily_questions_count, '/', userLimitInfo.daily_limit);
+        return res.status(429).json({ 
+          error: 'Daily question limit exceeded',
+          limitExceeded: true,
+          dailyLimit: userLimitInfo.daily_limit,
+          questionsUsed: userLimitInfo.daily_questions_count,
+          resetMessage: 'Your daily limit of questions has been reached. Your limit will reset tomorrow.',
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (dbError) {
+      console.error('Error tracking user question in database:', dbError);
+      // Continue with request if database tracking fails
+    }
+
     // Create the dynamic prompt with user data
     const fullPrompt = createAstrologyPrompt(userData, message);
 
@@ -107,10 +149,23 @@ app.post('/api/chat', async (req, res) => {
     const response = await result.response;
     const botReply = response.text();
 
-    res.json({ 
+    // Include limit info in response
+    const responseData = { 
       response: botReply,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    if (userLimitInfo) {
+      responseData.userLimitInfo = {
+        questionsUsed: userLimitInfo.daily_questions_count,
+        dailyLimit: userLimitInfo.daily_limit,
+        questionsRemaining: userLimitInfo.questions_remaining,
+        canAskQuestion: userLimitInfo.can_ask_question
+      };
+      console.log('Sending limit info to frontend:', responseData.userLimitInfo);
+    }
+
+    res.json(responseData);
 
   } catch (error) {
     console.error('Chat API Error:', error);
@@ -130,6 +185,54 @@ app.post('/api/chat', async (req, res) => {
       response: fallbackResponse,
       timestamp: new Date().toISOString(),
       fallback: true
+    });
+  }
+});
+
+// Get user's daily limit status endpoint
+app.post('/api/user-status', async (req, res) => {
+  try {
+    const { userData } = req.body;
+
+    // Validate user data
+    if (!userData || !userData.firstName || !userData.dateOfBirth) {
+      return res.status(400).json({ 
+        error: 'User first name and date of birth are required.' 
+      });
+    }
+
+    const userKey = generateUserKey(userData.dateOfBirth, userData.firstName);
+    console.log('Getting status for user key:', userKey);
+    
+    const status = await getUserDailyStatus(userKey);
+    console.log('Status retrieved:', status);
+    
+    if (!status) {
+      // User doesn't exist yet
+      const defaultStatus = {
+        questionsUsed: 0,
+        dailyLimit: 10,
+        questionsRemaining: 10,
+        canAskQuestion: true
+      };
+      console.log('Returning default status:', defaultStatus);
+      return res.json(defaultStatus);
+    }
+
+    const responseStatus = {
+      questionsUsed: status.daily_questions_count,
+      dailyLimit: status.daily_limit,
+      questionsRemaining: status.questions_remaining,
+      canAskQuestion: status.can_ask_question
+    };
+    
+    console.log('Returning user status:', responseStatus);
+    res.json(responseStatus);
+
+  } catch (error) {
+    console.error('User status API Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get user status' 
     });
   }
 });

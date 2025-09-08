@@ -1,4 +1,6 @@
-// User data management with localStorage
+// User data management with localStorage and Supabase
+
+import { getOrCreateUser, generateUserKey } from '../services/supabaseService';
 
 const USER_DATA_KEY = 'astro_chat_user_data';
 
@@ -24,14 +26,38 @@ export const getUserData = () => {
   }
 };
 
-// Save user data to localStorage
-export const saveUserData = (userData) => {
+// Save user data to localStorage and Supabase
+export const saveUserData = async (userData) => {
   try {
+    // Save to localStorage first for immediate access
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
-    return true;
+    
+    // Then save to Supabase
+    if (isUserDataComplete(userData)) {
+      try {
+        const supabaseUser = await getOrCreateUser(userData);
+        console.log('User saved to Supabase:', supabaseUser);
+        
+        // Store the user key in localStorage for future reference
+        const userDataWithKey = {
+          ...userData,
+          userKey: generateUserKey(userData.dateOfBirth, userData.firstName),
+          questionsCount: supabaseUser.questions_count
+        };
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userDataWithKey));
+        
+        return { success: true, supabaseUser };
+      } catch (supabaseError) {
+        console.error('Error saving to Supabase:', supabaseError);
+        // Still return success since localStorage worked
+        return { success: true, supabaseError };
+      }
+    }
+    
+    return { success: true };
   } catch (error) {
     console.error('Error saving user data to localStorage:', error);
-    return false;
+    return { success: false, error };
   }
 };
 
@@ -54,6 +80,24 @@ export const getUserInitials = (userData = null) => {
     return data.firstName.charAt(0).toUpperCase();
   }
   return 'U'; // Default fallback
+};
+
+// Get user's unique key
+export const getUserKey = (userData = null) => {
+  const data = userData || getUserData();
+  if (data.userKey) {
+    return data.userKey;
+  }
+  if (isUserDataComplete(data)) {
+    return generateUserKey(data.dateOfBirth, data.firstName);
+  }
+  return null;
+};
+
+// Get user's questions count
+export const getQuestionsCount = (userData = null) => {
+  const data = userData || getUserData();
+  return data.questionsCount || 0;
 };
 
 // Clear user data (for testing or reset purposes)

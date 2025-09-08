@@ -13,6 +13,7 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userData, setUserData] = useState(getUserData());
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   const handleSendMessage = async (messageText) => {
     // Check if user data is complete before sending message
@@ -41,24 +42,54 @@ function App() {
         const currentUserData = getUserData();
         const result = await chatAPI.sendMessage(messageText, currentUserData);
         
-        const botMessage = {
-          content: result.data.response,
-          isUser: false,
-          timestamp: result.data.timestamp
-        };
-
-        setMessages(prev => [...prev, botMessage]);
+        // Check if limit was exceeded
+        if (result.status === 429) {
+          const limitMessage = {
+            content: result.data.resetMessage || 'Your daily limit of questions has been reached. Your limit will reset tomorrow.',
+            isUser: false,
+            timestamp: new Date().toISOString(),
+            isLimitMessage: true
+          };
+          setMessages(prev => [...prev, limitMessage]);
+        } else {
+          const botMessage = {
+            content: result.data.response,
+            isUser: false,
+            timestamp: result.data.timestamp
+          };
+          setMessages(prev => [...prev, botMessage]);
+          
+          // ALWAYS update counter after successful question to refresh the display
+          console.log('Question answered successfully, updating counter...');
+          setRefreshCounter(prev => prev + 1);
+          
+          // Log limit info if available for debugging
+          if (result.data.userLimitInfo) {
+            console.log('User limit info:', result.data.userLimitInfo);
+          }
+        }
       } catch (error) {
         console.error('Failed to send message:', error);
         
-        // Fallback message if everything fails
-        const fallbackMessage = {
-          content: "I'm having trouble connecting to the cosmic network right now. Please ensure your birth details are complete and try again in a moment for accurate Vedic astrological guidance!",
-          isUser: false,
-          timestamp: new Date().toISOString()
-        };
-
-        setMessages(prev => [...prev, fallbackMessage]);
+        // Check if it's a 429 (limit exceeded) error
+        if (error.response && error.response.status === 429) {
+          const limitData = error.response.data;
+          const limitMessage = {
+            content: limitData.resetMessage || 'Your daily limit of questions has been reached. Your limit will reset tomorrow.',
+            isUser: false,
+            timestamp: new Date().toISOString(),
+            isLimitMessage: true
+          };
+          setMessages(prev => [...prev, limitMessage]);
+        } else {
+          // Fallback message if everything fails
+          const fallbackMessage = {
+            content: "I'm having trouble connecting to the cosmic network right now. Please ensure your birth details are complete and try again in a moment for accurate Vedic astrological guidance!",
+            isUser: false,
+            timestamp: new Date().toISOString()
+          };
+          setMessages(prev => [...prev, fallbackMessage]);
+        }
       } finally {
         setIsTyping(false);
       }
@@ -78,7 +109,8 @@ function App() {
   // Handle modal save
   const handleModalSave = (newUserData) => {
     setUserData(newUserData);
-    // Refresh the header to show updated user initials
+    // Refresh the header to show updated user initials and counter
+    setRefreshCounter(prev => prev + 1);
     window.dispatchEvent(new Event('userDataUpdated'));
   };
 
@@ -136,7 +168,10 @@ function App() {
         <div className="flex flex-col relative mobile-height">
           {/* Fixed Header */}
           <div className="sticky top-0 z-10 bg-white">
-            <Header onUserIconClick={handleUserIconClick} />
+            <Header 
+              onUserIconClick={handleUserIconClick} 
+              refreshCounter={refreshCounter}
+            />
           </div>
           
           {/* Scrollable Chat Messages */}

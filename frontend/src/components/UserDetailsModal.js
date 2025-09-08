@@ -83,12 +83,17 @@ const UserDetailsModal = ({ isOpen, onClose, onSave }) => {
     setIsSubmitting(true);
 
     try {
-      // Save to localStorage
-      const success = saveUserData(formData);
+      // Save to localStorage and Supabase
+      const result = await saveUserData(formData);
       
-      if (success) {
+      if (result.success) {
         onSave(formData);
         onClose();
+        
+        // Show success message if there was a Supabase error but localStorage worked
+        if (result.supabaseError) {
+          console.warn('Data saved locally but failed to sync with cloud:', result.supabaseError);
+        }
       } else {
         setErrors({ general: 'Failed to save user data. Please try again.' });
       }

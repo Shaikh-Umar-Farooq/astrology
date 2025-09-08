@@ -10,6 +10,8 @@ An AI-powered astrology chat application built with React.js frontend and Node.j
 - 🚀 **Fast**: Real-time chat with typing indicators
 - 🛡️ **Secure**: Rate limiting and input validation
 - 💾 **Fallback**: Graceful handling when AI is unavailable
+- 🗄️ **Database Integration**: User data and question tracking with Supabase
+- 🔑 **Unique User Keys**: Hash-based user identification for privacy
 
 ## Technology Stack
 
@@ -22,6 +24,7 @@ An AI-powered astrology chat application built with React.js frontend and Node.j
 - **Node.js** - JavaScript runtime
 - **Express.js** - Web framework
 - **Google Gemini AI** - AI model for astrological responses
+- **Supabase** - Database and authentication
 - **Helmet** - Security middleware
 - **CORS** - Cross-origin resource sharing
 
@@ -31,6 +34,7 @@ An AI-powered astrology chat application built with React.js frontend and Node.j
 - Node.js (v16 or higher)
 - npm or yarn
 - Google Gemini API key
+- Supabase account and project (for database integration)
 
 ### Installation
 
@@ -59,6 +63,11 @@ An AI-powered astrology chat application built with React.js frontend and Node.j
    - Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
    - Create a new API key
    - Copy it to your `.env` file
+
+4. **Setup Supabase (for database features):**
+   - Create a Supabase project at [supabase.com](https://supabase.com)
+   - Follow the detailed setup guide in `SUPABASE_SETUP.md`
+   - Add your Supabase credentials to both backend and frontend `.env` files
 
 ### Running the Application
 

@@ -37,14 +37,26 @@ export const chatAPI = {
       const response = await api.post('/api/chat', { message, userData });
       return {
         success: true,
+        status: response.status,
         data: response.data
       };
     } catch (error) {
       console.error('Chat API Error:', error);
       
+      // Handle 429 (limit exceeded) specially
+      if (error.response && error.response.status === 429) {
+        return {
+          success: false,
+          status: 429,
+          data: error.response.data,
+          error: 'Daily limit exceeded'
+        };
+      }
+      
       // Return fallback response if API fails
       return {
         success: false,
+        status: error.response?.status || 500,
         data: {
           response: "Cosmic energies abhi thoda clouded hain, but main sense kar sakta hun ki aap guidance chahte hain. Please apne birth details complete kariye aur question fir se puchiye taki main accurate Vedic astrological insights de sakun.",
           timestamp: new Date().toISOString(),

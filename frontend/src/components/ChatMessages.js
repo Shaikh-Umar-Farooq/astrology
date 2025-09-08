@@ -24,6 +24,7 @@ const ChatMessages = ({ messages, isTyping, showWelcome, onQuestionClick }) => {
           content={message.content}
           isUser={message.isUser}
           timestamp={message.timestamp}
+          isLimitMessage={message.isLimitMessage}
         />
       ))}
       

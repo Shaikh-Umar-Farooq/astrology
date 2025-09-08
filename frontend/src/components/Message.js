@@ -1,7 +1,7 @@
 import React from 'react';
 import FormattedMessage from './FormattedMessage';
 
-const Message = ({ content, isUser, timestamp }) => {
+const Message = ({ content, isUser, timestamp, isLimitMessage }) => {
   return (
     <div className={`mb-5 max-w-600 mx-auto ${isUser ? 'text-right' : 'text-left'}`}>
       {isUser ? (
@@ -10,9 +10,20 @@ const Message = ({ content, isUser, timestamp }) => {
           {content}
         </div>
       ) : (
-        // Bot message - formatted with colors and structure
-        <div className="w-full">
-          <FormattedMessage content={content} />
+        // Bot message - check if it's a limit message for special styling
+        <div className={`inline-block px-4 py-3 rounded-xl text-sm leading-relaxed max-w-full break-words border rounded-bl-sm ${
+          isLimitMessage 
+            ? 'bg-red-50 text-red-700 border-red-200' 
+            : 'bg-bot-bg text-gray-darker border-bot-border'
+        }`}>
+          {isLimitMessage ? (
+            <div className="flex items-center gap-2">
+              <span className="text-red-500">⚠️</span>
+              <span>{content}</span>
+            </div>
+          ) : (
+            <FormattedMessage content={content} />
+          )}
         </div>
       )}
       {timestamp && (

@@ -8,17 +8,23 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@google/generative-ai": "^0.2.1",
+    "@supabase/supabase-js": "^2.57.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "@google/generative-ai": "^0.2.1",
-    "helmet": "^7.1.0",
-    "express-rate-limit": "^7.1.5"
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
-  "keywords": ["astrology", "chat", "ai", "gemini"],
+  "keywords": [
+    "astrology",
+    "chat",
+    "ai",
+    "gemini"
+  ],
   "author": "",
   "license": "MIT"
 }
