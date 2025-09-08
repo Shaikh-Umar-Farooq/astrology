@@ -128,27 +128,38 @@ function App() {
     <div className="font-sans bg-gray-100 text-gray-darker h-screen overflow-hidden">
       <div className="grid lg:grid-cols-desktop md:grid-cols-tablet grid-cols-1 h-screen max-w-1400 mx-auto bg-white">
         {/* Left Sidebar - Hidden on mobile */}
-        <div className="hidden md:block">
+        <div className="hidden md:block h-screen overflow-y-auto">
           <AdSection side="left" />
         </div>
 
-        {/* Main Chat Section */}
-        <div className="flex flex-col h-screen">
-          <Header onUserIconClick={handleUserIconClick} />
-          <ChatMessages 
-            messages={messages}
-            isTyping={isTyping}
-            showWelcome={showWelcome}
-            onQuestionClick={handleSendMessage}
-          />
-          <ChatInput 
-            onSendMessage={handleSendMessage}
-            disabled={isTyping}
-          />
+        {/* Main Chat Section - Fixed Layout */}
+        <div className="flex flex-col h-screen relative">
+          {/* Fixed Header */}
+          <div className="sticky top-0 z-10 bg-white">
+            <Header onUserIconClick={handleUserIconClick} />
+          </div>
+          
+          {/* Scrollable Chat Messages */}
+          <div className="flex-1 overflow-hidden">
+            <ChatMessages 
+              messages={messages}
+              isTyping={isTyping}
+              showWelcome={showWelcome}
+              onQuestionClick={handleSendMessage}
+            />
+          </div>
+          
+          {/* Fixed Input at Bottom */}
+          <div className="sticky bottom-0 z-10 bg-white ">
+            <ChatInput 
+              onSendMessage={handleSendMessage}
+              disabled={isTyping}
+            />
+          </div>
         </div>
 
         {/* Right Sidebar - Hidden on mobile */}
-        <div className="hidden md:block">
+        <div className="hidden md:block h-screen overflow-y-auto">
           <AdSection side="right" />
         </div>
       </div>

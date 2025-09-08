@@ -39,7 +39,7 @@ const ChatInput = ({ onSendMessage, disabled }) => {
   }, [message]);
 
   return (
-    <div className=" px-1 py-1 pb-4 flex-shrink-0 bg-transparent border-l border-r border-gray">
+    <div className="px-4 md:px-7 py-1 pb-4 bg-white border-l border-r border-gray">
       <form onSubmit={handleSubmit} className="flex gap-2.5 items-end max-w-600 mx-auto">
         <textarea
           ref={textareaRef}
@@ -47,7 +47,7 @@ const ChatInput = ({ onSendMessage, disabled }) => {
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Ask me anything about astrology..."
-          className="flex-1 px-4 py-3 border border-border-gray rounded-3xl outline-none text-sm auto-resize bg-transparent focus:border-primary transition-colors"
+          className="flex-1 px-4 py-3 border border-border-gray rounded-3xl outline-none text-sm auto-resize bg-gray-light focus:border-primary transition-colors"
           disabled={disabled}
           rows={1}
         />
@@ -64,8 +64,8 @@ const ChatInput = ({ onSendMessage, disabled }) => {
       
       {/* Privacy Disclaimer */}
       <div className="mt-3 text-center">
-        <p className="text-xs text-gray-400 leading-relaxed max-w-600 mx-auto px-4">
-          🔒 Your chats are never stored—everything wiil be lost when you refresh or close this window.
+        <p className="text-xs sm:text-xs text-gray-400 leading-tight max-w-600 mx-auto px-1" style={{ fontSize: '10px' }}>
+          🔒 Your chats are never stored—everything will be lost when you refresh or close this window.
         </p>
       </div>
     </div>

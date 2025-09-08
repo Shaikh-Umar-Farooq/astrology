@@ -15,7 +15,7 @@ const ChatMessages = ({ messages, isTyping, showWelcome, onQuestionClick }) => {
   }, [messages, isTyping]);
 
   return (
-    <div className="flex-1 px-7 py-7 overflow-y-auto bg-white h-0 scrollbar-thin border-l border-r border-gray">
+    <div className="h-full px-4 md:px-7 py-4 md:py-7 overflow-y-auto bg-white scrollbar-thin border-l border-r border-gray">
       {showWelcome && <WelcomeMessage onQuestionClick={onQuestionClick} />}
       
       {messages.map((message, index) => (
