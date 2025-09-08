@@ -8,7 +8,9 @@
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "backend": "cd backend && npm run dev",
     "frontend": "cd frontend && npm start",
-    "vercel-build": "cd frontend && npm install && npm run build"
+    "vercel-build": "cd frontend && npm install && npm run build",
+    "netlify-build": "cd frontend && npm install && npm run build",
+    "netlify-dev": "netlify dev"
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.1"
