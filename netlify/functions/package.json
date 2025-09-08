@@ -1,9 +1,0 @@
-{
-  "name": "astro-chat-netlify-functions",
-  "version": "1.0.0",
-  "description": "Netlify serverless functions for Astro Chat",
-  "dependencies": {
-    "@google/generative-ai": "^0.2.1",
-    "@supabase/supabase-js": "^2.57.2"
-  }
-}
