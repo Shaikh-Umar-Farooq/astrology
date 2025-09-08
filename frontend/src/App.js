@@ -60,13 +60,7 @@ function App() {
           setMessages(prev => [...prev, botMessage]);
           
           // ALWAYS update counter after successful question to refresh the display
-          console.log('Question answered successfully, updating counter...');
           setRefreshCounter(prev => prev + 1);
-          
-          // Log limit info if available for debugging
-          if (result.data.userLimitInfo) {
-            console.log('User limit info:', result.data.userLimitInfo);
-          }
         }
       } catch (error) {
         console.error('Failed to send message:', error);

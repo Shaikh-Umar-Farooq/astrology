@@ -15,7 +15,6 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
   });
   
   const [isLoading, setIsLoading] = useState(false);
-  const [lastError, setLastError] = useState(null);
   const abortControllerRef = useRef(null);
   const timeoutRef = useRef(null);
   const lastFetchTimeRef = useRef(0);
@@ -57,13 +56,10 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
     abortControllerRef.current = new AbortController();
 
     setIsLoading(true);
-    setLastError(null);
 
     try {
       const status = await getUserDailyStatus(userData, abortControllerRef.current.signal);
-      console.log('Updated daily status:', status);
       setDailyStatus(status);
-      setLastError(null);
     } catch (error) {
       // Don't log or handle errors for cancelled requests
       if (error.message === 'Request was cancelled') {
@@ -71,7 +67,6 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
       }
       
       console.error('Error fetching daily status:', error);
-      setLastError(error.message);
       
       // Only retry on network errors, not server errors or rate limiting
       if (error.name === 'TypeError' || error.message.includes('fetch')) {
@@ -83,7 +78,7 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [userData]);
+  }, [userData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Only fetch when refreshCounter changes or component mounts
   useEffect(() => {
@@ -95,7 +90,7 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
 
       return () => clearTimeout(debounceTimeout);
     }
-  }, [refreshCounter, fetchDailyStatus]);
+  }, [refreshCounter, fetchDailyStatus]); // userData is captured in fetchDailyStatus
 
   // Cleanup on unmount
   useEffect(() => {

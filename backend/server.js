@@ -120,13 +120,10 @@ app.post('/api/chat', async (req, res) => {
     // Handle user question tracking in Supabase with daily limit check
     let userLimitInfo = null;
     try {
-      console.log('Processing question for user:', userData.firstName);
       userLimitInfo = await handleUserQuestion(userData);
-      console.log('User limit info after processing:', userLimitInfo);
       
       // Check if user has exceeded daily limit
       if (userLimitInfo && !userLimitInfo.can_ask_question) {
-        console.log('User has exceeded daily limit:', userLimitInfo.daily_questions_count, '/', userLimitInfo.daily_limit);
         return res.status(429).json({ 
           error: 'Daily question limit exceeded',
           limitExceeded: true,
@@ -162,7 +159,6 @@ app.post('/api/chat', async (req, res) => {
         questionsRemaining: userLimitInfo.questions_remaining,
         canAskQuestion: userLimitInfo.can_ask_question
       };
-      console.log('Sending limit info to frontend:', responseData.userLimitInfo);
     }
 
     res.json(responseData);
@@ -202,32 +198,24 @@ app.post('/api/user-status', async (req, res) => {
     }
 
     const userKey = generateUserKey(userData.dateOfBirth, userData.firstName);
-    console.log('Getting status for user key:', userKey);
-    
     const status = await getUserDailyStatus(userKey);
-    console.log('Status retrieved:', status);
     
     if (!status) {
       // User doesn't exist yet
-      const defaultStatus = {
+      return res.json({
         questionsUsed: 0,
         dailyLimit: 10,
         questionsRemaining: 10,
         canAskQuestion: true
-      };
-      console.log('Returning default status:', defaultStatus);
-      return res.json(defaultStatus);
+      });
     }
 
-    const responseStatus = {
+    res.json({
       questionsUsed: status.daily_questions_count,
       dailyLimit: status.daily_limit,
       questionsRemaining: status.questions_remaining,
       canAskQuestion: status.can_ask_question
-    };
-    
-    console.log('Returning user status:', responseStatus);
-    res.json(responseStatus);
+    });
 
   } catch (error) {
     console.error('User status API Error:', error);
