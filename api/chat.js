@@ -226,6 +226,18 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Check environment variables first
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error('[CHAT API] Missing environment variables:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseServiceRoleKey,
+        hasGemini: !!process.env.GEMINI_API_KEY
+      });
+      return res.status(500).json({ 
+        error: 'Server configuration error - missing environment variables' 
+      });
+    }
+
     const { message, userData } = req.body;
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {

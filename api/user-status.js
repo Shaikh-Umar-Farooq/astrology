@@ -95,6 +95,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Check environment variables first
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error('[USER-STATUS] Missing environment variables:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseServiceRoleKey
+      });
+      return res.status(500).json({ 
+        error: 'Server configuration error - missing environment variables' 
+      });
+    }
+
     const { userData } = req.body;
 
     // Validate user data
@@ -133,9 +144,20 @@ export default async function handler(req, res) {
     res.json(responseStatus);
 
   } catch (error) {
-    console.error('User status API Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to get user status' 
-    });
+    console.error('[USER-STATUS] API Error:', error);
+    
+    // Return more detailed error information for debugging
+    const errorResponse = {
+      error: 'Failed to get user status',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    };
+    
+    // In development, include more error details
+    if (process.env.NODE_ENV !== 'production') {
+      errorResponse.stack = error.stack;
+    }
+    
+    res.status(500).json(errorResponse);
   }
 }
