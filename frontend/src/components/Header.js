@@ -59,6 +59,11 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
 
     try {
       const status = await getUserDailyStatus(userData, abortControllerRef.current.signal);
+      console.log('Header: Updated counter from database:', {
+        questionsUsed: status.questionsUsed,
+        dailyLimit: status.dailyLimit,
+        questionsRemaining: status.questionsRemaining
+      });
       setDailyStatus(status);
     } catch (error) {
       // Don't log or handle errors for cancelled requests
@@ -83,6 +88,7 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
   // Only fetch when refreshCounter changes or component mounts
   useEffect(() => {
     if (isUserDataComplete(userData)) {
+      console.log('🔄 Header: RefreshCounter changed, updating counter...', refreshCounter);
       // Debounce the call - wait 500ms before making the request
       const debounceTimeout = setTimeout(() => {
         fetchDailyStatus();
@@ -90,7 +96,7 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
 
       return () => clearTimeout(debounceTimeout);
     }
-  }, [refreshCounter, fetchDailyStatus]); // userData is captured in fetchDailyStatus
+  }, [refreshCounter, fetchDailyStatus, userData]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -117,9 +123,9 @@ const Header = ({ onUserIconClick, refreshCounter }) => {
           {/* Message Counter */}
           {isUserDataComplete(userData) && (
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-600 font-medium">
-                {dailyStatus.questionsUsed}/{dailyStatus.dailyLimit}
-              </span>
+                <span className="text-xs text-gray-600 font-medium">
+                  {dailyStatus.questionsUsed}/{dailyStatus.dailyLimit}
+                </span>
               <div className="w-2 h-2 rounded-full bg-primary opacity-60"></div>
             </div>
           )}

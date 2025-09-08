@@ -1,8 +1,161 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// Supabase configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+/**
+ * Generate a unique key from user's DOB and first name
+ */
+const generateUserKey = (dateOfBirth, firstName) => {
+  const combinedString = `${firstName.toLowerCase().trim()}_${dateOfBirth}`;
+  return crypto.createHash('sha256').update(combinedString).digest('hex');
+};
+
+/**
+ * Handle user question tracking with daily limits
+ */
+const handleUserQuestion = async (userData) => {
+  try {
+    const userKey = generateUserKey(userData.dateOfBirth, userData.firstName);
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check if user exists
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_key', userKey)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      throw fetchError;
+    }
+
+    let user;
+    
+    if (!existingUser) {
+      // User doesn't exist, create new one
+      const newUser = {
+        user_key: userKey,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        date_of_birth: userData.dateOfBirth,
+        place_of_birth: userData.placeOfBirth,
+        time_of_birth: userData.timeOfBirth,
+        questions_count: 1,
+        daily_questions_count: 1,
+        last_question_date: today,
+        daily_limit: 10,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: createdUser, error: createError } = await supabase
+        .from('users')
+        .insert([newUser])
+        .select()
+        .single();
+
+      if (createError) {
+        throw createError;
+      }
+
+      user = {
+        ...createdUser,
+        can_ask_question: true,
+        questions_remaining: 9,
+        allowed_this_message: true
+      };
+    } else {
+      // User exists - check if we need to reset daily count
+      const isNewDay = existingUser.last_question_date !== today;
+      
+      if (isNewDay) {
+        // Reset daily count for new day
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({
+            daily_questions_count: 1,
+            last_question_date: today,
+            questions_count: existingUser.questions_count + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_key', userKey)
+          .select()
+          .single();
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        user = {
+          ...updatedUser,
+          can_ask_question: true,
+          questions_remaining: updatedUser.daily_limit - 1,
+          allowed_this_message: true
+        };
+      } else {
+        // Same day - check daily limit
+        if (existingUser.daily_questions_count >= existingUser.daily_limit) {
+          // Limit exceeded
+          user = {
+            ...existingUser,
+            can_ask_question: false,
+            questions_remaining: 0,
+            allowed_this_message: false
+          };
+        } else {
+          // Increment counters
+          console.log('[HANDLE USER] Incrementing counters for existing user:', {
+            currentDaily: existingUser.daily_questions_count,
+            currentTotal: existingUser.questions_count
+          });
+          
+          const { data: updatedUser, error: updateError } = await supabase
+            .from('users')
+            .update({
+              daily_questions_count: existingUser.daily_questions_count + 1,
+              questions_count: existingUser.questions_count + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_key', userKey)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('[HANDLE USER] Update error:', updateError);
+            throw updateError;
+          }
+
+          console.log('[HANDLE USER] User updated successfully:', {
+            newDaily: updatedUser.daily_questions_count,
+            newTotal: updatedUser.questions_count
+          });
+
+          user = {
+            ...updatedUser,
+            can_ask_question: updatedUser.daily_questions_count < updatedUser.daily_limit,
+            questions_remaining: updatedUser.daily_limit - updatedUser.daily_questions_count,
+            // This message was allowed since we only reached here when under the limit
+            allowed_this_message: true
+          };
+        }
+      }
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('Error in handleUserQuestion:', error);
+    throw error;
+  }
+};
 
 // Create dynamic astrology prompt based on user data
 const createAstrologyPrompt = (userData, userMessage) => {
@@ -94,6 +247,39 @@ export default async function handler(req, res) {
       });
     }
 
+    // Handle user question tracking in Supabase with daily limit check
+    let userLimitInfo = null;
+    try {
+      console.log('[CHAT API] Processing question for user:', userData.firstName);
+      userLimitInfo = await handleUserQuestion(userData);
+      console.log('[CHAT API] User limit info after processing:', {
+        questionsUsed: userLimitInfo.daily_questions_count,
+        dailyLimit: userLimitInfo.daily_limit,
+        canAsk: userLimitInfo.can_ask_question,
+        allowedThisMessage: userLimitInfo.allowed_this_message
+      });
+      
+      // Check if user has exceeded daily limit
+      // IMPORTANT: Only block when THIS message is not allowed. If this
+      // was the last allowed one (bringing count to the limit), we allow it
+      // and only block the next one.
+      if (userLimitInfo && userLimitInfo.allowed_this_message === false) {
+        console.log('[CHAT API] User has exceeded daily limit');
+        
+        return res.status(429).json({ 
+          error: 'Daily question limit exceeded',
+          limitExceeded: true,
+          dailyLimit: userLimitInfo.daily_limit,
+          questionsUsed: userLimitInfo.daily_questions_count,
+          resetMessage: 'Your daily limit of questions has been reached. Your limit will reset tomorrow.',
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (dbError) {
+      console.error('Error tracking user question in database:', dbError);
+      // Continue with request if database tracking fails
+    }
+
     // Create the dynamic prompt with user data
     const fullPrompt = createAstrologyPrompt(userData, message);
 
@@ -102,10 +288,25 @@ export default async function handler(req, res) {
     const response = await result.response;
     const botReply = response.text();
 
-    res.json({ 
+    // Include limit info in response
+    const responseData = { 
       response: botReply,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    if (userLimitInfo) {
+      responseData.userLimitInfo = {
+        questionsUsed: userLimitInfo.daily_questions_count,
+        dailyLimit: userLimitInfo.daily_limit,
+        questionsRemaining: userLimitInfo.questions_remaining,
+        canAskQuestion: userLimitInfo.can_ask_question,
+        allowedThisMessage: userLimitInfo.allowed_this_message
+      };
+      console.log('[CHAT API] Sending limit info to frontend:', responseData.userLimitInfo);
+    }
+
+    console.log('[CHAT API] Response sent successfully');
+    res.json(responseData);
 
   } catch (error) {
     console.error('Chat API Error:', error);

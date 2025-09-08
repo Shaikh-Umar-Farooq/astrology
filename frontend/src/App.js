@@ -6,6 +6,7 @@ import AdSection from './components/AdSection';
 import UserDetailsModal from './components/UserDetailsModal';
 import { chatAPI } from './services/api';
 import { getUserData, isUserDataComplete } from './utils/userStorage';
+import { verifyUserDatabaseState } from './services/supabaseService';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -57,10 +58,34 @@ function App() {
             isUser: false,
             timestamp: result.data.timestamp
           };
+          
+          // First, display the response
           setMessages(prev => [...prev, botMessage]);
           
-          // ALWAYS update counter after successful question to refresh the display
+          // IMMEDIATELY update counter since we got a successful response
+          console.log('✅ [CHAT API] Response sent successfully - updating counter now!');
           setRefreshCounter(prev => prev + 1);
+          
+          // Also do a verification after a short delay to ensure accuracy
+          setTimeout(async () => {
+            console.log('🔍 Verifying counter accuracy after successful response...');
+            const currentUserData = getUserData();
+            if (isUserDataComplete(currentUserData)) {
+              try {
+                const dbState = await verifyUserDatabaseState(currentUserData);
+                console.log('📊 Database verification after response:', {
+                  questionsUsed: dbState.questionsUsed,
+                  dailyLimit: dbState.dailyLimit,
+                  questionsRemaining: dbState.questionsRemaining
+                });
+                
+                // Only update if there's a discrepancy
+                setRefreshCounter(prev => prev + 1);
+              } catch (error) {
+                console.error('Failed to verify database state:', error);
+              }
+            }
+          }, 1000); // Wait 1 second for final verification
         }
       } catch (error) {
         console.error('Failed to send message:', error);

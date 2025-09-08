@@ -218,4 +218,45 @@ export const getUserDailyStatus = async (userData, signal = null) => {
   }
 };
 
+/**
+ * Verify user's actual database state after a question
+ * This function force-fetches the latest data to ensure accuracy
+ * @param {Object} userData - User information
+ * @returns {Object} - Latest user status from database
+ */
+export const verifyUserDatabaseState = async (userData) => {
+  try {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5001');
+    
+    // Add cache-busting parameter to force fresh data
+    const timestamp = new Date().getTime();
+    const response = await fetch(`${API_BASE_URL}/api/user-status?t=${timestamp}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userData }),
+      cache: 'no-cache' // Force no caching
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to verify user database state');
+    }
+
+    const result = await response.json();
+    console.log('Database verification result:', result);
+    return result;
+  } catch (error) {
+    console.error('Error verifying user database state:', error);
+    // Return fallback if verification fails
+    return {
+      questionsUsed: 0,
+      dailyLimit: 10,
+      questionsRemaining: 10,
+      canAskQuestion: true,
+      verified: false
+    };
+  }
+};
+
 export default supabase;

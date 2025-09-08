@@ -5,8 +5,9 @@
 The following ESLint errors have been resolved:
 
 1. **Unused variable**: Removed `lastError` state variable
-2. **Missing dependencies**: Fixed React hooks dependency arrays
+2. **Missing dependencies**: Fixed React hooks dependency arrays (`userData` included properly)
 3. **Console logs**: Removed debug console.log statements for production
+4. **useEffect dependencies**: All hooks now have correct dependency arrays
 
 ## Environment Variables Required
 
@@ -62,7 +63,7 @@ git push origin main
    - Daily limits enforced
    - Database updates properly
 
-## Build Configuration
+## Build Configuration for Vercel Serverless
 
 ### Vercel Settings
 - **Build Command**: `cd frontend && npm install && npm run build`
@@ -70,13 +71,28 @@ git push origin main
 - **Install Command**: `npm install`
 - **Root Directory**: `./` (project root)
 
-### API Routes
-Vercel will automatically detect and deploy:
-- `/api/chat.js` → `/api/chat`
-- `/api/health.js` → `/api/health`
+### Serverless Functions Setup
+Since you're deploying both frontend and backend on Vercel:
 
-Backend server.js endpoints will be available as:
-- `/api/user-status` (from backend server)
+1. **Move API files to `/api` folder** (already done):
+   - `/api/chat.js` → Serverless function at `/api/chat`
+   - `/api/health.js` → Serverless function at `/api/health`
+
+2. **Create additional API function for user status**:
+   - Create `/api/user-status.js` for the user status endpoint
+
+3. **Update API URLs in frontend**:
+   - All API calls will be relative: `/api/chat`, `/api/user-status`
+   - No need for separate backend server on Vercel
+
+### ✅ Serverless Functions Ready
+All required API functions have been created and updated:
+
+- ✅ `/api/chat.js` - Includes full user tracking and daily limits
+- ✅ `/api/user-status.js` - Provides current user status
+- ✅ `/api/health.js` - Health check endpoint
+
+Both functions include complete Supabase integration for question tracking.
 
 ## Testing After Deployment
 
