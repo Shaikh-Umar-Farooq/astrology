@@ -13,7 +13,8 @@
     "netlify-dev": "netlify dev"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.2.1"
+    "@google/generative-ai": "^0.2.1",
+    "@supabase/supabase-js": "^2.57.2"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
