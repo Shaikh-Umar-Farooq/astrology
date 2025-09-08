@@ -78,7 +78,8 @@ function App() {
   // Handle modal save
   const handleModalSave = (newUserData) => {
     setUserData(newUserData);
-    console.log('User data updated:', newUserData);
+    // Refresh the header to show updated user initials
+    window.dispatchEvent(new Event('userDataUpdated'));
   };
 
   // Check for user data on app load
@@ -91,6 +92,13 @@ function App() {
       setIsModalOpen(true);
     }
   }, []);
+
+  // Update header when userData changes
+  useEffect(() => {
+    if (userData && userData.firstName) {
+      document.title = `AstroPandit - ${userData.firstName}'s Reading`;
+    }
+  }, [userData]);
 
   // Add demo messages like in original (for testing)
   useEffect(() => {
