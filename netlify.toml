@@ -1,6 +1,6 @@
 [build]
-  # Build command for the frontend
-  command = "cd frontend && npm install && npm run build"
+  # Build command - install root dependencies first, then build frontend
+  command = "npm install && cd frontend && npm install && npm run build"
   
   # Output directory after build
   publish = "frontend/build"
