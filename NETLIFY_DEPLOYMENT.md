@@ -11,7 +11,6 @@ astro-chat/
 ├── netlify.toml                    # Netlify configuration
 ├── netlify/
 │   └── functions/                  # Serverless functions
-│       ├── package.json           # Function dependencies
 │       ├── chat.js                # Chat API endpoint
 │       ├── user-status.js         # User status API endpoint
 │       └── health.js              # Health check endpoint
@@ -79,7 +78,7 @@ git push origin main
 
 Netlify should auto-detect these settings from `netlify.toml`, but verify:
 
-- **Build command**: `cd frontend && npm install && npm run build`
+- **Build command**: `npm install && cd frontend && npm install && npm run build`
 - **Publish directory**: `frontend/build`
 - **Functions directory**: `netlify/functions`
 
@@ -165,11 +164,17 @@ curl -X POST https://your-site.netlify.app/api/chat \
 
 ### Build Failures
 
-**Problem**: Build fails with dependency errors
+**Problem**: "A Netlify Function is using '@supabase/supabase-js' but that dependency has not been installed"
 **Solution**: 
-- Check that `netlify/functions/package.json` exists
-- Ensure all dependencies are listed correctly
-- Clear cache and retry: Site settings → Build & deploy → Clear cache
+- Dependencies are now in the root `package.json` file (recommended approach)
+- The build command installs root dependencies first: `npm install && cd frontend && npm install && npm run build`
+- If still failing, clear cache and retry: Site settings → Build & deploy → Clear cache
+
+**Problem**: Other build dependency errors
+**Solution**: 
+- Ensure all function dependencies are in root `package.json`
+- Check Node.js version compatibility
+- Review build logs for specific missing packages
 
 ### Environment Variables Not Working
 

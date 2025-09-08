@@ -4,8 +4,8 @@
   "description": "AI Astrology Chat Application deployed on Vercel",
   "main": "api/chat.js",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
-    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "build": "node init && cd frontend && npm install && npm run build",
+    "dev": "node init && concurrently \"npm run backend\" \"npm run frontend\"",
     "backend": "cd backend && npm run dev",
     "frontend": "cd frontend && npm start",
     "vercel-build": "cd frontend && npm install && npm run build",
@@ -13,12 +13,20 @@
     "netlify-dev": "netlify dev"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.2.1"
+    "@google/generative-ai": "^0.2.1",
+    "@supabase/supabase-js": "^2.57.2"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
-  "keywords": ["astrology", "chat", "ai", "react", "vercel", "gemini"],
+  "keywords": [
+    "astrology",
+    "chat",
+    "ai",
+    "react",
+    "vercel",
+    "gemini"
+  ],
   "author": "",
   "license": "MIT"
 }
