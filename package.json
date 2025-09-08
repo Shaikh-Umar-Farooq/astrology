@@ -1,23 +1,22 @@
 {
   "name": "astro-chat",
   "version": "1.0.0",
-  "description": "AI Astrology Chat Application with React frontend and Node.js backend",
-  "main": "index.js",
+  "description": "AI Astrology Chat Application deployed on Vercel",
+  "main": "api/chat.js",
   "scripts": {
-    "install-all": "npm run install-backend && npm run install-frontend",
-    "install-backend": "cd backend && npm install",
-    "install-frontend": "cd frontend && npm install",
+    "build": "cd frontend && npm install && npm run build",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "backend": "cd backend && npm run dev",
     "frontend": "cd frontend && npm start",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start",
-    "test": "cd frontend && npm test"
+    "vercel-build": "cd frontend && npm install && npm run build"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.2.1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
-  "keywords": ["astrology", "chat", "ai", "react", "nodejs", "gemini"],
+  "keywords": ["astrology", "chat", "ai", "react", "vercel", "gemini"],
   "author": "",
   "license": "MIT"
 }

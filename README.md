@@ -158,17 +158,54 @@ colors: {
 - Add components in `frontend/src/components/`
 - Update API calls in `frontend/src/services/api.js`
 
-## Deployment
+## Deployment on Vercel
 
-### Frontend (Netlify/Vercel)
-1. Build the frontend: `cd frontend && npm run build`
-2. Deploy the `build` folder
-3. Set environment variable: `REACT_APP_API_URL=your-backend-url`
+### Quick Deploy
+1. **Push to GitHub**: Push your code to a GitHub repository
+2. **Connect to Vercel**: 
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Vercel will auto-detect the configuration
 
-### Backend (Railway/Render/Heroku)
-1. Deploy the `backend` folder
-2. Set environment variables in your hosting platform
-3. Update CORS settings in `server.js` for production
+### Manual Deploy
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy from project root
+vercel
+
+# Follow the prompts:
+# Set up and deploy? Y
+# Which scope? (your account)
+# Link to existing project? N
+# Project name: astro-chat
+# Directory: ./
+```
+
+### Environment Variables
+Set these in Vercel Dashboard → Settings → Environment Variables:
+- `GEMINI_API_KEY`: Your Google Gemini API key
+- `NODE_ENV`: production
+
+### Build Settings in Vercel
+- **Build Command**: `cd frontend && npm install && npm run build`
+- **Output Directory**: `frontend/build`
+- **Install Command**: `npm install`
+
+### Project Structure for Vercel
+```
+astro-chat/
+├── api/                    # Serverless functions
+│   ├── chat.js            # Chat API endpoint
+│   └── health.js          # Health check endpoint
+├── frontend/              # React app
+│   ├── src/
+│   ├── public/
+│   └── package.json
+├── vercel.json           # Vercel configuration
+└── package.json          # Root dependencies
+```
 
 ## Troubleshooting
 
